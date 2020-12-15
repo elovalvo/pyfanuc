@@ -15,6 +15,28 @@ public class Main {
         System.out.println();
     }
 
+    //Single-sub-packet
+    static byte[] encap(byte[] payload) {
+        ByteBuffer b = ByteBuffer.allocate(1500);
+        b.order(ByteOrder.BIG_ENDIAN);
+        b.putInt(0xa0a0a0a0); //Header
+        b.putShort((short) 1); //Version
+        b.putShort((short) 0x2101); //Request
+        b.putShort((short) 0); //Placeholder Length
+        b.putShort((short) 1);
+
+        b.putShort((short) (payload.length + 2));
+        b.put(payload);
+
+        b.putShort(8, (short) (b.position() - 10));
+
+        byte[] ret = new byte[b.position()];
+        b.position(0);
+        b.get(ret);
+        return ret;
+    }
+
+    //Multi-sub-packet
     static byte[] encap(byte[][] payload) {
         ByteBuffer b=ByteBuffer.allocate(1500);
         b.order(ByteOrder.BIG_ENDIAN);
