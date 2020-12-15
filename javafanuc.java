@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 public class Main {
-
     public static void main(String[] args) {
         byte[] n1=new byte[]{1,2,3,4,5,6,7,8};
         byte[] n2=new byte[]{9,10,11,12,13,14,15};
@@ -13,6 +12,13 @@ public class Main {
             System.out.printf("0x%02x ",b);
         }
         System.out.println();
+        h[7]=2;
+        try {
+            byte[][] k = decap(h);
+        }
+        catch(IllegalAccessException e) {
+
+        }
     }
 
     //Single-sub-packet
