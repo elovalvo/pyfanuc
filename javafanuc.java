@@ -2,10 +2,15 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 public class Main {
+    private final static int FRAMEHEADER=0xa0a0a0a0;
+    private final static short FTYPE_OPN_REQU=0x0101,FTYPE_OPN_RESP=0x0102;
+    private final static short FTYPE_VAR_REQU=0x2101,FTYPE_VAR_RESP=0x2102;
+    private final static short FTYPE_CLS_REQU=0x0201,FTYPE_CLS_RESP=0x0202;
+
     public static void main(String[] args) {
         byte[] n1=new byte[]{1,2,3,4,5,6,7,8};
         byte[] n2=new byte[]{9,10,11,12,13,14,15};
-        byte[] h=encap(new byte[][] {n1,n2});
+        byte[] h=encap(new byte[][] {n1,n2},FTYPE_VAR_REQU);
         for(byte b:h) {
             System.out.printf("0x%02x ",b);
         }
@@ -19,13 +24,12 @@ public class Main {
         }
     }
 
-    //Single-sub-packet
-    static byte[] encap(byte[] payload) {
+    static byte[] encap(byte[] payload, short type) {
         ByteBuffer b = ByteBuffer.allocate(1500);
         b.order(ByteOrder.BIG_ENDIAN);
-        b.putInt(0xa0a0a0a0); //Header
+        b.putInt(FRAMEHEADER); //Header
         b.putShort((short) 1); //Version
-        b.putShort((short) 0x2101); //Request
+        b.putShort(type); //Request
         b.putShort((short) 0); //Placeholder Length
         b.putShort((short) 1);
 
@@ -40,13 +44,12 @@ public class Main {
         return ret;
     }
 
-    //Multi-sub-packet
-    static byte[] encap(byte[][] payload) {
+    static byte[] encap(byte[][] payload, short type) {
         ByteBuffer b=ByteBuffer.allocate(1500);
         b.order(ByteOrder.BIG_ENDIAN);
-        b.putInt(0xa0a0a0a0); //Header
-        b.putShort((short)1); //Version
-        b.putShort((short)0x2101); //Request
+        b.putInt(FRAMEHEADER); //Header
+        b.putShort((short) 1); //Version
+        b.putShort(type); //Request
         b.putShort((short)0); //Placeholder Length
         b.putShort((short)payload.length);
 
@@ -62,22 +65,20 @@ public class Main {
         b.get(ret);
         return ret;
     }
-    
+
     static byte[][] decap(byte[] packetdata) throws IllegalAccessException{
-        if(packetdata.length>=10) {
+         if(packetdata.length>=10) {
             if(packetdata[0] == (byte)0xa0 && packetdata[1] == (byte)0xa0 && packetdata[2] == (byte)0xa0 && packetdata[3] == (byte)0xa0) {
-                int fvers = packetdata[4] << 8 | packetdata[5];
-                int ftype = packetdata[6] << 8 | packetdata[7];
+                int fvers = packetdata[4] << 8 | packetdata[5], ftype = packetdata[6] << 8 | packetdata[7];
                 int len1 = packetdata[8] << 8 | packetdata[9];
                 if(len1 + 10 == packetdata.length) {
                     if(len1==0) return null;
-                    if(ftype==0x2102) { //Response
+                    if(ftype==FTYPE_VAR_RESP) { //Response
                         int qu=packetdata[10] << 8 | packetdata[11];
                         if(qu>((packetdata.length-12)/2))
                             throw new IllegalAccessException("PROTOCOL decode error");
                         byte[][] re=new byte[qu][];
-                        int count=0;
-                        int n=12;
+                        int count=0,n=12;
                         try {
                             while (n < packetdata.length) {
                                 int le = packetdata[n] << 8 | packetdata[n + 1];
