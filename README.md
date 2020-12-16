@@ -1,6 +1,7 @@
 # pyfanuc
 focas fanuc protocol-analysis to python-source
 
+[sampledecode](#sampledecode)
 [samplescreens on raspberry and android](#samples)
 
 The python-source is based on protocol analysis.
@@ -233,6 +234,9 @@ Stop Transfer
 | Sync        | Version | Request | Request length |
 |:-----------:|:-------:|:-------:|:-------:|
 | A0 A0 A0 A0 |  00 01  |  17 02  |  00 00  |
+
+# sampledecode
+![Test_Image](/image/sample.png)
 
 # samples
 
