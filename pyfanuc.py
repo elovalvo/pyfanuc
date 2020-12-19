@@ -233,6 +233,32 @@ class pyfanuc(object):
 					values["data"].append(value)
 			r[varname]=values
 		return r
+	def readparam2(self,axis,first,last=0):
+		if last==0:last=first
+		st=self._req_rdsingle(1,1,0x8d,first,last,axis)
+		if st["len"]<0:
+			return
+		r={}
+		for pos in range(0,st["len"],self.sysinfo["maxaxis"]*8+8):
+			varname,axiscount,valtype=unpack(">IhH",st["data"][pos:pos+8])
+			values={"type":valtype,"axis":axiscount,"data":[]}
+			for n in range(pos+8,pos+self.sysinfo["maxaxis"]*8+8,8):
+				value=st["data"][n:n+8]
+				if valtype==0:
+					value=value[-1] #bit 1bit / Byte
+				elif valtype==1:
+					value=[(value[-1] >> n)& 1 for n in range(7,-1,-1)] #bit 8bit
+				elif valtype==2:
+					value=unpack(">h",value[-2])[0] #short
+				elif valtype==3 or valtype==4:
+					value=_decode8(value) #real/long
+				if axiscount != -1:
+					values["data"].append(value)
+					break
+				else:
+					values["data"].append(value)
+			r[varname]=values
+		return r
 	def readdiag(self,axis,first,last=0):
 		if last==0:last=first
 		st=self._req_rdsingle(1,1,0x30,first,last,axis)
