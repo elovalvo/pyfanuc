@@ -118,6 +118,7 @@ class pyfanuc(object):
 				return None
 			else:
 				return unpack(">i",val[0:4])[0]/val[5]**val[7]
+
 	def statinfo(self):
 		"""
 		Get state of machine
