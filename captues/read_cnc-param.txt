@@ -1,4 +1,3 @@
-control 160
 read cnc-param 3115,3115,MAX_AXIS
 request:
 1,1,0x0e
@@ -31,7 +30,6 @@ response:
 	00 00 00 00
 	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
-control i30
 read cnc-param 6711,6711,MAX_AXIS
 request:
 1,1,0x8d
