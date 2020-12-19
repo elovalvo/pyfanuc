@@ -11,8 +11,8 @@ response:
 	00 00 00 00 00 00
 	[00 28]
 	00 00 0c 2b
-	ff ff 00 00	# MAX_AXIS + Type 0 (Bit)
-	8 x 00 00 00 00	# 8 x Bit=0
+	ff ff 00 00					# MAX_AXIS + Type 0 (Bit)
+	8 x 00 00 00 00					# 8 x Bit=0
 
 read cnc-param 3401,3401,MAX_AXIS
 request:
@@ -27,7 +27,7 @@ response:
 	00 00 00 00 00 00
 	[00 28]
 	00 00 0d 49
-	00 00 00 00					# 1 AXIS Type 0 (Bit)
+	00 00 00 00					# One Value Type 0 (Bit)
 	8 x 00 00 00 00					# 8 x Bits=0
 
 read cnc-param 6711,6711,MAX_AXIS
@@ -43,7 +43,7 @@ response:
 	00 00 00 00 00 00
 	[01 08]
 	00 00 1a 37
-		00 00 00 03				# 1 Axis Type 3 (long)
+		00 00 00 03				# One Value Type 3 (long)
 		00 00 cd 9e 00 0a 00 00			# 52638
 		31 x 00 00 00 00 00 0a 00 00		#     0
 
@@ -60,7 +60,7 @@ response:
 	00 00 00 00 00 00
 	[01 08]
 	00 00 07 3a
-		ff ff 00 03				# 1 Axis Type 3 (long)
+		ff ff 00 03				# ALL_AXIS Type 3 (long)
 		ff ff 93 cc 00 0a 00 00			# -27700
 		31 x 00 00 00 00 00 0a 00 00		#      0
 
@@ -82,7 +82,7 @@ response:
 1,1,0x8d	"Read CNC param (30i)"	ERR: 0,0,0x0
 	[264]
 	00 00 1e 86
-		00 00 00 04				# 1 Axis Type 4 (real)
+		00 00 00 04				# One Value Type 4 (real)
 		00 01 ee 24 00 0a 00 03			# 126.5
 		31 x 00 00 00 00 00 0a 00 00		#   0
 1,1,0xa0	"Read Param info"	ERR: 0,0,0x0
@@ -95,7 +95,7 @@ response:
 1,1,0x8d	"Read CNC param (30i)"	ERR: 0,0,0x0
 	[264]
 	00 00 1e 91
-		00 00 00 04				# 1 Axis Type 4 (real)
+		00 00 00 04				# One Value Type 4 (real)
 		00 01 ec 30 00 0a 00 03			# 126
 		31 x ff ff ff ff 00 0a ff ff
 1,1,0xa0	"Read Param info"	ERR: 0,0,0x0
@@ -117,3 +117,43 @@ response:
 		ff ff ff ff 00 0a 00 00			# -1
 		19 x 00 00 00 00 00 0a 00 00  #  0
 
+------------
+1,1,0e
+response:
+[param#   ]
+00 00 03 e9
+	[AXS] [TYP]
+	00 00 00 00 # ONE VALUE + Type Bit
+	[Bits     ]     
+	00 00 00 02 + 7 x 00 00 00 00
+
+[param#   ]
+00 00 03 ed
+	[AXS] [TYP]
+	ff ff 00 00 # ALL_AXIS + Type Bit
+	[AX#0 Bits] [AX#1 Bits] [AX#2 Bits] [AX#3 Bits] [AX#4 Bits] [AX#5 Bits] [AX#6 Bits] [AX#7 Bits] 
+	00 00 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 41 00 00 00 00 00 00 00 00
+
+[param#   ]
+00 00 03 f2
+	[AXS] [TYP]
+	00 00 00 01 # ONE VALUE + Type Byte
+	[Byte     ]     
+	00 00 00 00 + 7 x 00 00 00 00
+
+[param#   ]
+00 00 03 fc
+	[AXS] [TYP]
+	ff ff 00 01 # ALL_AXIS + Type Byte
+	[AX#0 Byte] [AX#1 Byte] [AX#2 Byte] [AX#3 Byte] [AX#4 Byte] [AX#5 Byte] [AX#6 Byte] [AX#7 Byte] 
+	00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 41 00 00 00 00 00 00 00 00
+
+No.01001 BIT   0x02
+No.01003 BIT   0x00
+No.01004 BIT   0x00
+No.01005 BIT   #1:0x02  #2:0x02  #3:0x02  #4:0x02  #5:0x02  #6:0x02
+No.01006 BIT   #1:0x10  #2:0x10  #3:0x10  #4:0x10  #5:0x10  #6:0x11
+No.01008 BIT   #1:0x00  #2:0x00  #3:0x00  #4:0x00  #5:0x00  #6:0x00
+No.01010 BYTE  0
+No.01013 BIT   0x00
+No.01020 BYTE  #1:0  #2:0  #3:0  #4:0  #5:0  #6:65
