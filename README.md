@@ -41,6 +41,7 @@ The current target platform for protocol-analysis is an EDM-machine with a 160 c
 | readdir | read directory (one block) |
 | readdir_complete	| read complete directory |
 | readprogname | read mainprogname with path |
+| readparam2 | read parameter(s) |
 
 ### subfunctions
 |function|description|
