@@ -16,6 +16,7 @@ The current target platform for protocol-analysis is an EDM-machine with a 160 c
 |:------|:---------|
 | getsysinfo | read sysinfos |
 | readparam | read parameter(s) |
+| readparaminfo | read parameter(s)info |
 | readdiag | read diagnostic-value(s) |
 | readmacro | read macro-value(s) |
 | readpmc | read pmc-variables |
@@ -42,6 +43,7 @@ The current target platform for protocol-analysis is an EDM-machine with a 160 c
 | readdir_complete	| read complete directory |
 | readprogname | read mainprogname with path |
 | readparam2 | read parameter(s) |
+| readparaminfo2 | read parameter(s)info |
 
 ### subfunctions
 |function|description|
