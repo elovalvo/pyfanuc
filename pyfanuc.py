@@ -209,6 +209,8 @@ class pyfanuc(object):
 					break
 		return r
 	def readparam(self,axis,first,last=0):
+		if conn.sysinfo['cnctype']==b'31':
+			return self.readparam2(axis,first,last)
 		if last==0:last=first
 		st=self._req_rdsingle(1,1,0x0e,first,last,axis)
 		if st["len"]<0:
