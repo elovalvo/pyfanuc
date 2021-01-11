@@ -260,6 +260,22 @@ class pyfanuc(object):
 					values["data"].append(value)
 			r[varname]=values
 		return r
+	def readparaminfo(self,num,count=1):
+		st=self._req_rdsingle(1,1,0x10,num,count)
+		if st["len"]<0:
+			return
+		r={"next":unpack(">i",st["data"][4:8])[0],"before":unpack(">i",st["data"][0:4])[0]}
+		for pos in range(8,st["len"],8):
+			r[unpack(">i",st["data"][pos:pos+4])[0]]={'type':unpack(">i",st["data"][pos+4:pos+8])[0]}
+		return r
+	def readparaminfo2(self,num,count=1):
+		st=self._req_rdsingle(1,1,0xa0,num,count,0,0,0x10000)
+		if st["len"]<0:
+			return
+		r={"next":unpack(">i",st["data"][4:8])[0],"before":unpack(">i",st["data"][0:4])[0]}
+		for pos in range(8,st["len"],4*5):
+			r[unpack(">i",st["data"][pos:pos+4])[0]]=dict(zip(['size','array','unit','dim','input','display','others'],unpack(">hhhhhhh",st["data"][pos+4:pos+4+2*7])))
+		return r
 	def readdiag(self,axis,first,last=0):
 		if last==0:last=first
 		st=self._req_rdsingle(1,1,0x30,first,last,axis)
