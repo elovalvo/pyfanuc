@@ -336,6 +336,16 @@ class pyfanuc(object):
 			r[first]=self._decode8(st["data"][pos:pos+8])
 			first+=1
 		return r
+	def readmacro2(self,first,count=1):
+		st=self._req_rdsingle(1,1,0xa7,first,count)
+		if st["len"]<=0:
+			return
+		r={}
+		for pos in range(0,st["len"],8):
+			r[first]=unpack(">d",st["data"][pos:pos+8])[0]
+			first+=1
+		return r
+
 	def readpmc(self,datatype,section,first,count=1):
 		last=first+(1<<datatype)*count-1
 		st=self._req_rdsingle(2,1,0x8001,first,last,section,datatype)
