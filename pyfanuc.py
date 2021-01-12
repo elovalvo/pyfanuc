@@ -208,11 +208,20 @@ class pyfanuc(object):
 					what &= ~v
 					break
 		return r
-	def readparam(self,axis,first,last=0):
+
+	def readsetting(self,axis,first,last=0):
+		return self.readparam(axis,first,last=0,param=0)
+	def readsettinginfo(self,num,count=1):
+		return self.readparaminfo(num,count,param=0)
+
+	def readparam(self,axis,first,last=0,param=1):
 		if conn.sysinfo['cnctype']==b'31':
-			return self.readparam2(axis,first,last)
+			return self.readparam2(axis,first,last,param)
 		if last==0:last=first
-		st=self._req_rdsingle(1,1,0x0e,first,last,axis)
+		if param==1:
+			st=self._req_rdsingle(1,1,0x0e,first,last,axis)
+		else:
+			st=self._req_rdsingle(1,1,0x29,first,last,axis)
 		if st["len"]<0:
 			return
 		r={}
@@ -236,9 +245,12 @@ class pyfanuc(object):
 					values["data"].append(value)
 			r[varname]=values
 		return r
-	def readparam2(self,axis,first,last=0):
+	def readparam2(self,axis,first,last=0,param=1):
 		if last==0:last=first
-		st=self._req_rdsingle(1,1,0x8d,first,last,axis)
+		if param==1:
+			st=self._req_rdsingle(1,1,0x8d,first,last,axis)
+		else:
+			st=self._req_rdsingle(1,1,0x90,first,last,axis)
 		if st["len"]<0:
 			return
 		r={}
@@ -252,7 +264,7 @@ class pyfanuc(object):
 				elif valtype==1 or valtype==2 or valtype==3:
 					value=unpack(">i",value[0:4])[0]
 				elif valtype==4:
-					value=self._decode8(value)  #real/long
+					value=self._decode8(value)  #real
 				if axiscount != -1:
 					values["data"].append(value)
 					break
@@ -260,14 +272,18 @@ class pyfanuc(object):
 					values["data"].append(value)
 			r[varname]=values
 		return r
-	def readparaminfo(self,num,count=1):
-		st=self._req_rdsingle(1,1,0x10,num,count)
+	def readparaminfo(self,num,count=1,param=1):
+		if param==1:
+			st=self._req_rdsingle(1,1,0x10,num,count)
+		else:
+			st=self._req_rdsingle(1,1,0x2B,num,count)
 		if st["len"]<0:
 			return
 		r={"next":unpack(">i",st["data"][4:8])[0],"before":unpack(">i",st["data"][0:4])[0]}
 		for pos in range(8,st["len"],8):
 			r[unpack(">i",st["data"][pos:pos+4])[0]]={'type':unpack(">i",st["data"][pos+4:pos+8])[0]}
 		return r
+	
 	def readparaminfo2(self,num,count=1):
 		st=self._req_rdsingle(1,1,0xa0,num,count,0,0,0x10000)
 		if st["len"]<0:
