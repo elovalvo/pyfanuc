@@ -556,10 +556,6 @@ if __name__ == '__main__':
 	conn=pyfanuc('192.168.0.70')
 	if conn.connect():
 		print("connected")
-#		for t in conn.readdir_complete("//CNC_MEM/USER/PATH1/"):
-#			print(t)
-		for n in conn.readdir_complete("//CNC_MEM/USER/PATH1/"):
-			print(n['name']+" ("+time.strftime("%c",n['datetime'])+')' if n['type']=='F' else '<'+n['name']+'>')
 		print(conn.readmacro2(100))
 		#print(conn.readaxes(pyfanuc.ABS | pyfanuc.DIST))
 		#print(conn._req_rdsingle(1,1,0x8a))
