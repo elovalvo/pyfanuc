@@ -18,6 +18,7 @@
 01,01,25 Read act SpindleSpeed (acts)
 01,01,26 Read Position
 01,01,29 Read Settings
+01,01,2b Read Setting info
 
 01,01,30 Read Diag
 
