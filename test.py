@@ -13,7 +13,7 @@ if conn.connect():
 	if n is not None:
 		print("Laenge: %i von %i (%0.1f %%)" % (n[1870],n[1874],n[1870]/n[1874]*100))
 	print("Lese Achsen")
-	for key,val in conn.readaxis(conn.ABS | conn.SKIP | conn.REL | conn.REF).items():
+	for key,val in conn.readaxes(conn.ABS | conn.SKIP | conn.REL | conn.REF).items():
 		print(key,val)
 	print("Lese Programm O5555")
 	print(conn.getprog("O5555"))
