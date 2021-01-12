@@ -6,6 +6,7 @@
 01,01,18 SysInfo
 01,01,19 Read State of CNC
 01,01,1a readalarm
+01,01,1b read number format
 01,01,1c Read Prgnum Main/Run
 01,01,1d Read SeqNum
 01,01,1f Rewind
