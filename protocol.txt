@@ -1,7 +1,10 @@
-01,01,0e Read CNCParam
+01,01,0e Read Param
+01,01,10 Read Param Info
+
 01,01,15 Read Macro
 01,01,16 Set Macro
 01,01,18 SysInfo
+01,01,19 Read State of CNC
 01,01,1a readalarm
 01,01,1c Read Prgnum Main/Run
 01,01,1d Read SeqNum
@@ -14,6 +17,7 @@
 01,01,24 Read act Feedrate
 01,01,25 Read act SpindleSpeed (acts)
 01,01,26 Read Position
+01,01,29 Read Settings
 
 01,01,30 Read Diag
 
@@ -28,11 +32,11 @@
 01,01,89 axis names
 01,01,8a spindle names
 01,01,8b axis names ( absolute spindle )
-01,01,8d read CNC param (cnc_rdparam3)
+01,01,8d Read Param (30i)
 
-01,01,96 read GCode (30i)
-01,01,a0 read Param info
-01,01,a2 read Diag info
+01,01,96 Read GCode (30i)
+01,01,a0 Read Param info (30i)
+01,01,a2 Read Diag info
 01,01,a4 (controlled axis 0/spindle 1)
 01,01,a7 read macro (double)
 
