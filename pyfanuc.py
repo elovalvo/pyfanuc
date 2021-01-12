@@ -215,6 +215,10 @@ class pyfanuc(object):
 		return self.readparaminfo(num,count,param=0)
 
 	def readparam(self,axis,first,last=0,param=1):
+		"""
+		Read Parameter(s)
+		or Setting(s) - Paramter with setting-attribut
+		"""
 		if conn.sysinfo['cnctype']==b'31':
 			return self.readparam2(axis,first,last,param)
 		if last==0:last=first
@@ -246,6 +250,10 @@ class pyfanuc(object):
 			r[varname]=values
 		return r
 	def readparam2(self,axis,first,last=0,param=1):
+		"""
+		Read Parameter(s)info
+		or Setting(s)info - Paramter with setting-attribut
+		"""
 		if last==0:last=first
 		if param==1:
 			st=self._req_rdsingle(1,1,0x8d,first,last,axis)
