@@ -34,6 +34,7 @@
 01,01,8a spindle names
 01,01,8b axis names ( absolute spindle )
 01,01,8d Read Param (30i)
+01,01,90 Read Setting Info (30i)
 
 01,01,96 Read GCode (30i)
 01,01,a0 Read Param info (30i)
