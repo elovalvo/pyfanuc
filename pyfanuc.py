@@ -115,7 +115,7 @@ class pyfanuc(object):
 		"intern function - decode value from 8 bytes"
 		if val[5]==2 or val[5]==10:
 			if val[-2:]==b'\xff'*2:
-				return None
+				return float('Nan')
 			else:
 				return unpack(">i",val[0:4])[0]/val[5]**val[7]
 
@@ -191,7 +191,7 @@ class pyfanuc(object):
 			if what & v:
 				r.append(self._req_rdsub(1,1,0x26,w,axis))
 		st=self._req_rdmulti(r)
-		if st["len"]<0:
+		if st["len"]<0 or "error" in st:
 			return
 		r={}
 		for x in st["data"]:
@@ -226,7 +226,7 @@ class pyfanuc(object):
 			st=self._req_rdsingle(1,1,0x0e,first,last,axis)
 		else:
 			st=self._req_rdsingle(1,1,0x29,first,last,axis)
-		if st["len"]<0:
+		if st["len"]<0 or "error" in st:
 			return
 		r={}
 		for pos in range(0,st["len"],self.sysinfo["maxaxis"]*4+8):
@@ -259,7 +259,7 @@ class pyfanuc(object):
 			st=self._req_rdsingle(1,1,0x8d,first,last,axis)
 		else:
 			st=self._req_rdsingle(1,1,0x90,first,last,axis)
-		if st["len"]<0:
+		if st["len"]<0 or "error" in st:
 			return
 		r={}
 		for pos in range(0,st["len"],self.sysinfo["maxaxis"]*8+8):
@@ -285,7 +285,7 @@ class pyfanuc(object):
 			st=self._req_rdsingle(1,1,0x10,num,count)
 		else:
 			st=self._req_rdsingle(1,1,0x2B,num,count)
-		if st["len"]<0:
+		if st["len"]<0 or "error" in st:
 			return
 		r={"next":unpack(">i",st["data"][4:8])[0],"before":unpack(">i",st["data"][0:4])[0]}
 		for pos in range(8,st["len"],8):
@@ -294,7 +294,7 @@ class pyfanuc(object):
 	
 	def readparaminfo2(self,num,count=1):
 		st=self._req_rdsingle(1,1,0xa0,num,count,0,0,0x10000)
-		if st["len"]<0:
+		if st["len"]<0 or "error" in st:
 			return
 		r={"next":unpack(">i",st["data"][4:8])[0],"before":unpack(">i",st["data"][0:4])[0]}
 		for pos in range(8,st["len"],4*5):
@@ -303,7 +303,7 @@ class pyfanuc(object):
 	def readdiag(self,axis,first,last=0):
 		if last==0:last=first
 		st=self._req_rdsingle(1,1,0x30,first,last,axis)
-		if st["len"]<0:
+		if st["len"]<0 or "error" in st:
 			return
 		r={}
 		for pos in range(0,st["len"],self.sysinfo["maxaxis"]*4+8):
@@ -329,7 +329,7 @@ class pyfanuc(object):
 	def readmacro(self,first,last=0):
 		if last==0: last=first
 		st=self._req_rdsingle(1,1,0x15,first,last)
-		if st["len"]<=0:
+		if st["len"]<=0 or "error" in st:
 			return
 		r={}
 		for pos in range(0,st["len"],8):
@@ -338,7 +338,7 @@ class pyfanuc(object):
 		return r
 	def readmacro2(self,first,count=1):
 		st=self._req_rdsingle(1,1,0xa7,first,count)
-		if st["len"]<=0:
+		if st["len"]<=0 or "error" in st:
 			return
 		r={}
 		for pos in range(0,st["len"],8):
@@ -349,7 +349,7 @@ class pyfanuc(object):
 	def readpmc(self,datatype,section,first,count=1):
 		last=first+(1<<datatype)*count-1
 		st=self._req_rdsingle(2,1,0x8001,first,last,section,datatype)
-		if st["len"]<=0:
+		if st["len"]<=0 or "error" in st:
 			return
 		r={}
 		for x in range(st["len"]>>datatype):
@@ -364,7 +364,7 @@ class pyfanuc(object):
 		return r
 	def readexecprog(self,chars=256):
 		st=self._req_rdsingle(1,1,0x20,chars)
-		if st["len"]<=4:
+		if st["len"]<=4 or "error" in st:
 			return
 		return {"block":unpack(">i",st["data"][0:4])[0],"text":st["data"][4:].decode()}
 	def readprognum(self):
@@ -373,7 +373,7 @@ class pyfanuc(object):
 		returns [running,main]
 		"""
 		st=self._req_rdsingle(1,1,0x1c)
-		if st["len"]<8:
+		if st["len"]<8 or "error" in st:
 			return
 		return {"run":unpack(">i",st["data"][0:4])[0],"main":unpack(">i",st["data"][4:])[0]}
 	def readprogname(self): #31i
@@ -382,10 +382,10 @@ class pyfanuc(object):
 		returns name with path
 		"""
 		st=self._req_rdsingle(1,1,0xb9)
-		if st["len"]>=0:
-			p=st["data"].split(b'\0', 1)[0]
-			return p.decode()
-		return None
+		if st["len"]<=0 or "error" in st:
+			return
+		p=st["data"].split(b'\0', 1)[0]
+		return p.decode()
 	def settime(self,h=-1,m=0,s=0):
 		"""
 		Set Time to Parameter-Values or actual PC-Time
@@ -416,7 +416,7 @@ class pyfanuc(object):
 	def readalarm(self):
 		"Read alarm Bitfield"
 		st=self._req_rdsingle(1,1,0x1a)
-		if st["len"]==4:
+		if st["len"]==4 or "error" in st:
 			return unpack(">L",st["data"])[0]
 		return None
 	def readalarmcode(self,type,withtext=0,maxmsgs=-1,textlength=32):
