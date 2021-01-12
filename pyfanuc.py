@@ -141,15 +141,16 @@ class pyfanuc(object):
 		returns [HOUR,MINUTE,SECOND]
 		"""
 		st=self._req_rdsingle(1,1,0x45,1)
-		if st["len"]==0xc:
-			return unpack(">HHH",st["data"][-6:])
+		if st["len"]!=0xc or "error" in st:
+			return
+		return unpack(">HHH",st["data"][-6:])
 	def getdatetime(self):
 		"""
 		Get date and time
 		returns time.struct_time
 		"""
 		st=self._req_rdmulti([self._req_rdsub(1,1,0x45,0),self._req_rdsub(1,1,0x45,1)])
-		if st["len"]<0:
+		if st["len"]<0 or "error" in st:
 			return
 		if len(st["data"]) != 2:
 			return
@@ -416,9 +417,9 @@ class pyfanuc(object):
 	def readalarm(self):
 		"Read alarm Bitfield"
 		st=self._req_rdsingle(1,1,0x1a)
-		if st["len"]==4 or "error" in st:
-			return unpack(">L",st["data"])[0]
-		return None
+		if st["len"]!=4 or "error" in st:
+			return
+		return unpack(">L",st["data"])[0]
 	def readalarmcode(self,type,withtext=0,maxmsgs=-1,textlength=32):
 		"Read alarm code / msg"
 		#readalarmmsg	Returns Alarmcode+Msgtext	1,1,0x23,int32 Type,int32 MaxMsgs,int32 0 w/o or 1/2 with text,int32 MaxTextLength
@@ -427,15 +428,15 @@ class pyfanuc(object):
 			maxmsgs=int(self.sysinfo['axes'])
 		st=self._req_rdsingle(1,1,0x23,type,maxmsgs,withtext,textlength)
 		ret=[]
-		if st["len"] > 0:
-			for pos in range(0,st["len"],4*4+textlength):
-				entry=dict(zip(['alarmcode','alarmtype','axis'],unpack(">iii",st["data"][pos:pos+4*3])))
-				txlen=unpack(">i",st["data"][pos+4*3:pos+4*4])[0]
-				if txlen>0 and withtext>0:
-					entry["text"]=st["data"][pos+4*4:pos+4*4+textlength]
-				ret.append(entry)
-			return ret
-		return None
+		if st["len"] < 0  or "error" in st:
+			return
+		for pos in range(0,st["len"],4*4+textlength):
+			entry=dict(zip(['alarmcode','alarmtype','axis'],unpack(">iii",st["data"][pos:pos+4*3])))
+			txlen=unpack(">i",st["data"][pos+4*3:pos+4*4])[0]
+			if txlen>0 and withtext>0:
+				entry["text"]=st["data"][pos+4*4:pos+4*4+textlength]
+			ret.append(entry)
+		return ret
 	def readdir_current(self,fgbg=1): #31i
 		"""
 		Get current directory
@@ -443,10 +444,10 @@ class pyfanuc(object):
 		returns directoryname
 		"""
 		st=self._req_rdsingle(1,1,0xb0,fgbg)
-		if st["len"]>=0:
-			p=st["data"].split(b'\0', 1)[0]
-			return p.decode()
-		return None
+		if st["len"]<0:
+			return
+		p=st["data"].split(b'\0', 1)[0]
+		return p.decode()
 	def readdir_info(self,dir): #31i
 		buffer=bytearray(0x100)
 		bdir=dir.encode()
@@ -557,9 +558,9 @@ if __name__ == '__main__':
 		print("connected")
 #		for t in conn.readdir_complete("//CNC_MEM/USER/PATH1/"):
 #			print(t)
-#		for n in conn.readdir_complete("//CNC_MEM/USER/PATH1/"):
-#			print(n['name']+" ("+time.strftime("%c",n['datetime'])+')' if n['type']=='F' else '<'+n['name']+'>')
-		print(conn.getdatetime())
+		for n in conn.readdir_complete("//CNC_MEM/USER/PATH1/"):
+			print(n['name']+" ("+time.strftime("%c",n['datetime'])+')' if n['type']=='F' else '<'+n['name']+'>')
+		print(conn.readmacro2(100))
 		#print(conn.readaxes(pyfanuc.ABS | pyfanuc.DIST))
 		#print(conn._req_rdsingle(1,1,0x8a))
 	if conn.disconnect():
