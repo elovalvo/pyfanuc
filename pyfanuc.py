@@ -96,7 +96,6 @@ class pyfanuc(object):
 		t=0
 		while True:
 			dat+=self.sock.recv(1500)
-			print(len(dat))
 			t=self._decap(dat)
 			if not "missing" in t: break
 		if t["len"]==0:
