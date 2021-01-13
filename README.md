@@ -57,6 +57,27 @@ The current target platform for protocol-analysis is an EDM-machine with a 160 c
 | decap | decapsulate packets |
 | _decode8 | decode 8 byte values |
 
+## readaxes
+ABS - absolute pos
+REL - relative
+REF - machine
+SKIP - skipping
+DIST - distance to go
+ABSWO / RELWO - absolute/relative without toollength (when implemented)
+
+```python
+conn=pyfanuc('192.168.0.70')
+if conn.connect():
+	print("connected")
+	for t in conn.readaxes(conn.ABS | conn.REL | conn.REF | conn.SKIP | conn.DIST | conn.ABSWO | conn.RELWO).items():
+		print(t[0],end='\t')
+		for z in t[1][0:4]:
+			print("%8.3f" % z,end='\t')
+		print()
+if conn.disconnect():
+	print("disconnected")
+```
+
 ## Protocol samples
 
 ### GETPMC VALUE D2204
