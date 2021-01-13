@@ -267,9 +267,9 @@ class pyfanuc(object):
 			for n in range(pos+8,pos+self.sysinfo["maxaxis"]*4+8,4):
 				value=st["data"][n:n+4]
 				if valtype==0:
-					value=value[-1] #bit 1bit / Byte
+					value=[(value[-1] >> n)& 1 for n in range(7,-1,-1)] #bit 1bit
 				elif valtype==1:
-					value=[(value[-1] >> n)& 1 for n in range(7,-1,-1)] #bit 8bit
+					value=value[-1] #byte
 				elif valtype==2:
 					value=unpack(">h",value[-2])[0] #short
 				elif valtype==3:
