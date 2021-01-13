@@ -74,9 +74,16 @@ ABSWO / RELWO - absolute/relative without toollength (when implemented)
 conn=pyfanuc('192.168.0.70')
 if conn.connect():
 	print("connected")
+	
+	print('\t',end='')
+	names=conn.readaxesnames()
+	for n in names:
+		print("   '%s'   " % n,end='\t\t')
+	print()
+
 	for t in conn.readaxes(conn.ABS | conn.REL | conn.REF | conn.SKIP | conn.DIST | conn.ABSWO | conn.RELWO).items():
 		print(t[0],end='\t')
-		for z in t[1][0:4]:
+		for z in t[1][0:len(names)]:
 			print("%8.3f" % z,end='\t')
 		print()
 if conn.disconnect():
@@ -85,13 +92,14 @@ if conn.disconnect():
 output
 ```
 connected
-ABS       90.079          36.355         150.970         180.02
-REL        1.000           2.000           3.000           4.00
-REF      310.162        -163.545          -0.013         323.13
-SKIP    -220.083         199.900         150.983        -143.10
-DIST       0.000           0.000           0.000           0.00
-ABSWO     90.079          36.355         150.970         180.02
-REFWO      1.000           2.000           3.000           4.00
+type     'X'             'Y'             'Z'             'B'
+ABS       90.079          36.355         150.970         180.022
+REL        1.000           2.000           3.000           4.000
+REF      310.162        -163.545          -0.013         323.130
+SKIP    -220.083         199.900         150.983        -143.108
+DIST       0.000           0.000           0.000           0.000
+ABSWO     90.079          36.355         150.970         180.022
+REFWO      1.000           2.000           3.000           4.000
 disconnected
 ```
 
