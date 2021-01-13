@@ -29,7 +29,7 @@ The current target platform for protocol-analysis is an EDM-machine with a 160 c
 | getprog | program read test (experimental) |
 | readactfeed | actual feedrate |
 | readactspindlespeed | actual spindlespeed |
-| readaxis | actual axis-values |
+| [readaxes](#readaxes) | actual axis-values |
 | getdate | read date |
 | gettime | read time |
 | getdatetime | read date+time |
