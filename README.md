@@ -59,10 +59,15 @@ The current target platform for protocol-analysis is an EDM-machine with a 160 c
 
 ## readaxes
 ABS - absolute pos
+
 REL - relative
+
 REF - machine
+
 SKIP - skipping
+
 DIST - distance to go
+
 ABSWO / RELWO - absolute/relative without toollength (when implemented)
 
 ```python
