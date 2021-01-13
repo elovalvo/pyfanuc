@@ -78,7 +78,12 @@ class pyfanuc(object):
 		"intern function - pack simple command"
 		cmd=pack(">HHH",c1,c2,c3)
 		self.sock.sendall(self._encap(pyfanuc.FTYPE_VAR_REQU,cmd+pack(">iiiii",v1,v2,v3,v4,v5)+pl))
-		t=self._decap(self.sock.recv(1500))
+		dat=b''
+		while True:
+			dat+=self.sock.recv(1500)
+			t=self._decap(dat)
+			if not "missing" in t:
+				break
 		if t["len"]==0:
 			return {"len":-1}
 		elif t["ftype"]!=pyfanuc.FTYPE_VAR_RESP:
