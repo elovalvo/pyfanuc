@@ -90,9 +90,15 @@ class pyfanuc(object):
 		else:
 			return {"len":-1}
 	def _req_rdmulti(self,l):
-		"intern function - pack multiple commands"
+		"intern function - pack multiple commands - multipacket version"
 		self.sock.sendall(self._encap(pyfanuc.FTYPE_VAR_REQU,l))
-		t=self._decap(self.sock.recv(1500))
+		dat=b''
+		t=0
+		while True:
+			dat+=self.sock.recv(1500)
+			print(len(dat))
+			t=self._decap(dat)
+			if not "missing" in t: break
 		if t["len"]==0:
 			return {"len":-1}
 		elif t["ftype"]!=pyfanuc.FTYPE_VAR_RESP:
@@ -183,11 +189,11 @@ class pyfanuc(object):
 				n.update(t[0])
 			return n
 
-	ABS=1;REL=2;REF=4;SKIP=8;DIST=16
+	ABS=1;REL=2;REF=4;SKIP=8;DIST=16;ABSWO=32
 	ALLAXIS=-1
 	def readaxes(self,what=1,axis=ALLAXIS):
 		r=[]
-		axvalues=(("ABS",pyfanuc.ABS,4),("REL",pyfanuc.REL,6),("REF",pyfanuc.REF,1),("SKIP",pyfanuc.SKIP,8),("DIST",pyfanuc.DIST,7))
+		axvalues=(("ABS",pyfanuc.ABS,4),("REL",pyfanuc.REL,6),("REF",pyfanuc.REF,1),("SKIP",pyfanuc.SKIP,8),("DIST",pyfanuc.DIST,7),("ABSWO",pyfanuc.ABSWO,0))
 		for u,v,w in axvalues:
 			if what & v:
 				r.append(self._req_rdsub(1,1,0x26,w,axis))
