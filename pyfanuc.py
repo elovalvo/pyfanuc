@@ -188,6 +188,26 @@ class pyfanuc(object):
 				n.update(t[0])
 			return n
 
+	def readaxesnames(self):
+		st=self._req_rdsingle(1,1,0x89)
+		if st["len"]<0 or "error" in st:
+			return
+		ret=[]
+		for t in range(0,st["len"],4):
+			a=st["data"][t:t+4]
+			ret.append(a[0:a.find(b'\0')].decode())
+		return ret
+
+	def readspindlenames(self):
+		st=self._req_rdsingle(1,1,0x8a)
+		if st["len"]<0 or "error" in st:
+			return
+		ret=[]
+		for t in range(0,st["len"],4):
+			a=st["data"][t:t+4]
+			ret.append(a[0:a.find(b'\0')].decode())
+		return ret
+
 	ABS=1;REL=2;REF=4;SKIP=8;DIST=16;ABSWO=32;RELWO=64
 	ALLAXIS=-1
 	def readaxes(self,what=1,axis=ALLAXIS):
