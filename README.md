@@ -82,6 +82,18 @@ if conn.connect():
 if conn.disconnect():
 	print("disconnected")
 ```
+output
+```
+connected
+ABS       90.079          36.355         150.970         180.022
+REL       90.079          36.355         150.970         180.022
+REF      310.162        -163.545          -0.013         323.130
+SKIP    -220.083         199.900         150.983        -143.108
+DIST       0.000           0.000           0.000           0.000
+ABSWO     90.079          36.355         150.970         180.022
+REFWO     90.079          36.355         150.970         180.022
+disconnected
+```
 
 ## Protocol samples
 
