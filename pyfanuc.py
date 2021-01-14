@@ -252,14 +252,14 @@ class pyfanuc(object):
 	def readsettinginfo(self,num,count=1):
 		return self.readparaminfo(num,count,param=0)
 
-	def readparam(self,axis,first,last=0,param=1):
+	def readparam(self,axis,first,last=None,param=1):
 		"""
 		Read Parameter(s)
 		or Setting(s) - Paramter with setting-attribut
 		"""
 		if conn.sysinfo['cnctype']==b'31':
 			return self.readparam2(axis,first,last,param)
-		if last==0:last=first
+		if last is None:last=first
 		if param==1:
 			st=self._req_rdsingle(1,1,0x0e,first,last,axis)
 		else:
@@ -287,12 +287,12 @@ class pyfanuc(object):
 					values["data"].append(value)
 			r[varname]=values
 		return r
-	def readparam2(self,axis,first,last=0,param=1):
+	def readparam2(self,axis,first,last=None,param=1):
 		"""
 		Read Parameter(s)info
 		or Setting(s)info - Paramter with setting-attribut
 		"""
-		if last==0:last=first
+		if last is None:last=first
 		if param==1:
 			st=self._req_rdsingle(1,1,0x8d,first,last,axis)
 		else:
@@ -364,8 +364,8 @@ class pyfanuc(object):
 					values["data"].append(value)
 			r[varname]=values
 		return r
-	def readmacro(self,first,last=0):
-		if last==0: last=first
+	def readmacro(self,first,last=None):
+		if last is None: last=first
 		st=self._req_rdsingle(1,1,0x15,first,last)
 		if st["len"]<=0 or "error" in st:
 			return
@@ -457,11 +457,11 @@ class pyfanuc(object):
 		if st["len"]!=4 or "error" in st:
 			return
 		return unpack(">L",st["data"])[0]
-	def readalarmcode(self,type,withtext=0,maxmsgs=-1,textlength=32):
+	def readalarmcode(self,type,withtext=0,maxmsgs=None,textlength=32):
 		"Read alarm code / msg"
 		#readalarmmsg	Returns Alarmcode+Msgtext	1,1,0x23,int32 Type,int32 MaxMsgs,int32 0 w/o or 1/2 with text,int32 MaxTextLength
 		#											int32 AlarmCode,int32 AlarmType,int32 Axis,int32 TextLength,text/trash
-		if maxmsgs<=0:
+		if maxmsgs is None:
 			maxmsgs=int(self.sysinfo['axes'])
 		st=self._req_rdsingle(1,1,0x23,type,maxmsgs,withtext,textlength)
 		ret=[]
