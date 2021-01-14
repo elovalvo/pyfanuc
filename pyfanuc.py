@@ -9,7 +9,7 @@ class pyfanuc(object):
 		self.port=port
 		self.connected=False
 	FTYPE_OPN_REQU=0x0101;FTYPE_OPN_RESP=0x0102
-	FTYPE_VAR_REQU=0x2101;FTYPE_VAR_RESP=0x2102
+	FTYPE_VAR_REQU=0x2101;FTYPE_VAR_RESP=0x2102;FTYPE_VAR_ERR=0x2103
 	FTYPE_CLS_REQU=0x0201;FTYPE_CLS_RESP=0x0202
 	FRAME_SRC=b'\x00\x01'
 	FRAME_DST=b'\x00\x02';FRAME_DST2=b'\x00\x01'
@@ -128,6 +128,12 @@ class pyfanuc(object):
 				return float('Nan')
 			else:
 				return unpack(">i",val[0:4])[0]/val[5]**val[7]
+	def _encode8(self,val,exp=2):
+		"intern function - encode value to 8 bytes"
+		if isinstance(val,int):
+			return pack(">i",val)+b"\0\x02\0\0"
+		else:
+			return pack(">i",val[0:4])[0]/val[5]**val[7]
 
 	def statinfo(self):
 		"""
@@ -468,6 +474,20 @@ class pyfanuc(object):
 				entry["text"]=st["data"][pos+4*4:pos+4*4+textlength]
 			ret.append(entry)
 		return ret
+
+	def readdrives(self):
+		"""
+		Get drive-names
+		returns names
+		"""
+		st=self._req_rdsingle(1,1,0xae)
+		if st["len"]<0 or "error" in st:
+			return
+		ret=[]
+		for t in range(0,st["len"],12):
+			a=st["data"][t:t+12]
+			ret.append(a[0:a.find(b'\0')].decode())
+		return ret
 	def readdir_current(self,fgbg=1): #31i
 		"""
 		Get current directory
@@ -526,15 +546,17 @@ class pyfanuc(object):
 		requests filename
 		returns filecontent
 		"""
-		q=b''
 		if isinstance(name,int):
 			q=("O%04i-O%04i" % (name,name)).encode()
 		elif isinstance(name,str):
 			name=name.upper()
-			if not name.startswith("O"):
-				name="O"+name
-			if name.find("-")==-1:
-				name=name+"-"+name
+			if self.sysinfo["cnctype"]==b"31":
+				name="N:"+name
+			else:
+				if not name.startswith("O"):
+					name="O"+name
+				if name.find("-")==-1:
+					name=name+"-"+name
 			q=name.encode()
 		else:
 			return -1
@@ -588,8 +610,11 @@ if __name__ == '__main__':
 	if conn.connect():
 		print("connected")
 		print(conn.readmacro2(100))
+		for n in conn.readdir_complete("//CNC_MEM/USER/PATH1/"):
+			print(n['name']+" ("+time.strftime("%c",n['datetime'])+')' if n['type']=='F' else '<'+n['name']+'>')
 		#print(conn.readaxes(pyfanuc.ABS | pyfanuc.DIST))
 		#print(conn._req_rdsingle(1,1,0x8a))
+		print(conn.getprog("HELLO"))
 	if conn.disconnect():
 		print("disconnected")
 
