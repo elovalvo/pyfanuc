@@ -174,6 +174,21 @@ class pyfanuc(object):
 			return
 		if unpack(">H",st["data"][0][1][0:2])[0] == 0xc and unpack(">H",st["data"][1][1][0:2])[0] == 0xc:
 			return datetime.datetime(*unpack(">HHHHHH",st["data"][0][1][2:8]+st["data"][1][1][-6:])).timetuple()
+	def settime(self,h=None,m=0,s=0):
+		"""
+		Set Time to Parameter-Values or actual PC-Time
+		variant 1 - requests nothing for actual PC-Time to set
+		variant 2 - requests hour,optional minute (default 0),optional second (default 0)
+		"""
+		if h is None:
+			t=time.localtime()
+			h,m,s=t.tm_hour,t.tm_min,t.tm_sec
+		self.sock.sendall(self._encap(pyfanuc.FTYPE_VAR_REQU,self._req_rdsub(1,1,0x46,1,0,0,0,12)+b'\x00'*6+pack(">HHH",h,m,s)))
+		t=self._decap(self.sock.recv(1500))
+		if t["len"]==18:
+			if t["ftype"]==pyfanuc.FTYPE_VAR_RESP and unpack(">HHH",t["data"][0][0:6])==(1,1,0x46):
+				return unpack(">h",t["data"][0][6:8])[0]
+
 	def getsysinfo(self):
 		"""
 		Get sysinfo
@@ -248,7 +263,7 @@ class pyfanuc(object):
 		return r
 
 	def readsetting(self,axis,first,last=0):
-		return self.readparam(axis,first,last=0,param=0)
+		return self.readparam(axis,first,last=None,param=0)
 	def readsettinginfo(self,num,count=1):
 		return self.readparaminfo(num,count,param=0)
 
@@ -338,8 +353,8 @@ class pyfanuc(object):
 		for pos in range(8,st["len"],4*5):
 			r[unpack(">i",st["data"][pos:pos+4])[0]]=dict(zip(['size','array','unit','dim','input','display','others'],unpack(">hhhhhhh",st["data"][pos+4:pos+4+2*7])))
 		return r
-	def readdiag(self,axis,first,last=0):
-		if last==0:last=first
+	def readdiag(self,axis,first,last=None):
+		if last is None:last=first
 		st=self._req_rdsingle(1,1,0x30,first,last,axis)
 		if st["len"]<0 or "error" in st:
 			return
@@ -424,20 +439,6 @@ class pyfanuc(object):
 			return
 		p=st["data"].split(b'\0', 1)[0]
 		return p.decode()
-	def settime(self,h=-1,m=0,s=0):
-		"""
-		Set Time to Parameter-Values or actual PC-Time
-		variant 1 - requests nothing for actual PC-Time to set
-		variant 2 - requests hour,optional minute (default 0),optional second (default 0)
-		"""
-		if h==-1:
-			t=time.localtime()
-			h,m,s=t.tm_hour,t.tm_min,t.tm_sec
-		self.sock.sendall(self._encap(pyfanuc.FTYPE_VAR_REQU,self._req_rdsub(1,1,0x46,1,0,0,0,12)+b'\x00'*6+pack(">HHH",h,m,s)))
-		t=self._decap(self.sock.recv(1500))
-		if t["len"]==18:
-			if t["ftype"]==pyfanuc.FTYPE_VAR_RESP and unpack(">HHH",t["data"][0][0:6])==(1,1,0x46):
-				return unpack(">h",t["data"][0][6:8])[0]
 	def listprog(self,start=1):
 		ret={}
 		while True:
