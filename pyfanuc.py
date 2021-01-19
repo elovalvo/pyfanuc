@@ -292,7 +292,7 @@ class pyfanuc(object):
 				elif valtype==1:
 					value=value[-1] #byte
 				elif valtype==2:
-					value=unpack(">h",value[-2])[0] #short
+					value=unpack(">h",value[-2:])[0] #short
 				elif valtype==3:
 					value=unpack(">i",value)[0] #int
 				if axiscount != -1:
