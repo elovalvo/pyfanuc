@@ -180,7 +180,7 @@ class pyfanuc(object):
 			return
 		if st['data'][0]['len'] == 0xc and st['data'][0]['len'] == 0xc:
 			return datetime.datetime(*unpack(">HHHHHH",st["data"][0]['data'][0:6]+st["data"][1]['data'][-6:])).timetuple()
-	def settime(self,h=None,m=0,s=0): #OLD
+	def settime(self,h=None,m=0,s=0): #new
 		"""
 		Set Time to Parameter-Values or actual PC-Time
 		variant 1 - requests nothing for actual PC-Time to set
@@ -189,11 +189,8 @@ class pyfanuc(object):
 		if h is None:
 			t=time.localtime()
 			h,m,s=t.tm_hour,t.tm_min,t.tm_sec
-		self.sock.sendall(self._encap(pyfanuc.FTYPE_VAR_REQU,self._req_rdsub(1,1,0x46,1,0,0,0,12)+b'\x00'*6+pack(">HHH",h,m,s)))
-		t=self._decap(self.sock.recv(1500))
-		if t["len"]==18:
-			if t["ftype"]==pyfanuc.FTYPE_VAR_RESP and unpack(">HHH",t["data"][0][0:6])==(1,1,0x46):
-				return unpack(">h",t["data"][0][6:8])[0]
+
+		return self._req_rdsingle(1,1,0x46,1,0,0,0,12,pack(">xxxxxxHHH",h,m,s))['error']
 
 	def getsysinfo(self): #v
 		"""
