@@ -274,7 +274,7 @@ class pyfanuc(object):
 	def readsettinginfo(self,num,count=1):
 		return self.readparaminfo(num,count,param=0)
 
-	def readparam(self,axis,first,last=None,param=1):
+	def readparam(self,axis,first,last=None,param=1): #param=0 for settings
 		"""
 		Read Parameter(s)
 		or Setting(s) - Paramter with setting-attribut
@@ -309,7 +309,7 @@ class pyfanuc(object):
 					values["data"].append(value)
 			r[varname]=values
 		return r
-	def readparaminfo(self,num,count=1,param=1):
+	def readparaminfo(self,num,count=1,param=1): #param=0 for settings
 		if param==1:
 			st=self._req_rdsingle(1,1,0x10,num,count)
 		else:
@@ -329,7 +329,7 @@ class pyfanuc(object):
 			r[unpack(">i",st["data"][pos:pos+4])[0]]=dict(zip(['size','array','unit','dim','input','display','others'],unpack(">hhhhhhh",st["data"][pos+4:pos+4+2*7])))
 		return r
 
-	def readparam2(self,axis,first,last=None,param=1):
+	def readparam2(self,axis,first,last=None,param=1): #param=0 for settings
 		"""
 		Read Parameter(s)info
 		or Setting(s)info - Paramter with setting-attribut
