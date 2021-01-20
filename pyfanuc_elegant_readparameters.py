@@ -1,10 +1,10 @@
-	def readparameters(self,axis,first,last): #VERSION 16
+	def readparameters(self,axis,first,last):
 		paracmd=0x0e if conn.sysinfo['cnctype']!=b'31' else 0x8d
 		paralen=4 if conn.sysinfo['cnctype']!=b'31' else 8
 
-		st=self._req_rdmulti([self._req_rdsub(1,1,0x10,first,1),
-			self._req_rdsub(1,1,0x10,last,1),
-			self._req_rdsub(1,1,paracmd,first,last,axis)])
+		st=self._req_rdmulti([self._req_rdsub(1,1,0x10,first,1), #PARAINFO FIRST
+			self._req_rdsub(1,1,0x10,last,1), #PARAINFO LAST
+			self._req_rdsub(1,1,paracmd,first,last,axis)]) #FIRST Parameters
 		if st["len"]<0 or "error" in st:
 			return
 		f=dict(zip(['before','next','num'],unpack(">iii",st["data"][0]['data'][:12])))
@@ -35,12 +35,11 @@
 				r[varname]=values
 				first=varname+1
 			if error==2:
-				st=self._req_rdsingle(1,1,paranum,first,last,axis)
+				st=self._req_rdsingle(1,1,paranum,first,last,axis) #NEXT PARAMETERS
 				error=st['error']
 				if st["len"]<0:
 					break
-				data=st['data']
-				length=st['len']
+				data,length=st['data'],st['len']
 			else:
 				break
 		return r
