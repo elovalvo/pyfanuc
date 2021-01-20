@@ -59,7 +59,10 @@ class pyfanuc(object):
 			return {"len":-1}
 		fvers,ftype,len1=unpack(">HHH",data[4:10])
 		if len1+10 != len(data):
-			return {"len":-1}
+			if (len1+10)>len(data):
+				return {"len":-1,"missing":len1+10-len(data)}
+			else:
+				return {"len":-1}
 		if len1==0:
 			return {"len":0,"ftype":ftype,"fvers":fvers,"data":b'0'}
 		data=data[10:]
@@ -79,45 +82,48 @@ class pyfanuc(object):
 		cmd=pack(">HHH",c1,c2,c3)
 		self.sock.sendall(self._encap(pyfanuc.FTYPE_VAR_REQU,cmd+pack(">iiiii",v1,v2,v3,v4,v5)+pl))
 		dat=b''
-		while True:
+		while True:	#MULTI-Packet
 			dat+=self.sock.recv(1500)
 			t=self._decap(dat)
 			if not "missing" in t:
 				break
-		if t["len"]==0:
-			return {"len":-1}
-		elif t["ftype"]!=pyfanuc.FTYPE_VAR_RESP:
-			return {"len":-1}
-		elif t["data"][0].startswith(cmd+b'\x00'*6):
-			return {"len":unpack(">H",t["data"][0][12:14])[0],"data":t["data"][0][14:]}
-		elif t["data"][0].startswith(cmd):
-			return {"len":0,"data":t["data"][0][6:],"error":unpack(">h",t["data"][0][6:8])[0]}
+		if t['len']==0: #ZEROLENGTH
+			return {'len':-1,'error':-1,'suberror':0}
+		elif t['ftype']!=pyfanuc.FTYPE_VAR_RESP: #NOT RESPONSE
+			return {'len':-1,'error':-1,'suberror':1}
+		elif t['data'][0].startswith(cmd):
+			return {	'cmd':unpack('>HHH',t['data'][0][:6]),
+						'len':unpack('>H',t['data'][0][12:14])[0],
+						'data':t['data'][0][14:],
+						'error':unpack('>h',t['data'][0][6:8])[0],
+						'errdetail':unpack('>h',t['data'][0][8:10])[0]	}
 		else:
-			return {"len":-1}
-	def _req_rdmulti(self,l):
+			return {'len':-1,'error':-1,'suberror':2}
+	def _req_rdmulti(self,lst):
 		"intern function - pack multiple commands - multipacket version"
-		self.sock.sendall(self._encap(pyfanuc.FTYPE_VAR_REQU,l))
+		self.sock.sendall(self._encap(pyfanuc.FTYPE_VAR_REQU,lst))
 		dat=b''
-		t=0
-		while True:
+		while True: #MULTI-Packet
 			dat+=self.sock.recv(1500)
 			t=self._decap(dat)
-			if not "missing" in t: break
-		if t["len"]==0:
-			return {"len":-1}
-		elif t["ftype"]!=pyfanuc.FTYPE_VAR_RESP:
-			return {"len":-1}
-		if len(l) != len(t["data"]):
-			return {"len":-1}
-		for x in range(len(t["data"])):
-			if t["data"][x][0:6] == l[x][0:6]:
-				if t["data"][x][6:12]==b'\x00'*6:
-					t["data"][x]=[0,t["data"][x][12:]]
-				else:
-					t["data"][x]=[unpack('>h',t["data"][x][0:2])[0],t["data"][x][12:]]
+			if not "missing" in t:
+				break
+		if t['len']==0: #ZEROLENGTH
+			return {'len':-1,'error':-1,'suberror':0}
+		elif t['ftype']!=pyfanuc.FTYPE_VAR_RESP: #NOT RESPONSE
+			return {'len':-1,'error':-1,'suberror':1}
+		if len(lst) != len(t['data']): #WRONG subpacket-count
+			return {'len':-1,'error':-1,'suberror':3}
+		for x in range(len(t['data'])):
+			if t['data'][x][0:6] == lst[x][0:6]:
+				v=dict(zip(['error','errdetail','len'],unpack('>hhxxH',t['data'][x][6:14])))
+				v['cmd']=unpack('>HHH',t['data'][x][:6]),
+				v['data']=t['data'][x][14:]
+				t['data'][x]=v
 			else:
-				return {"len":-1}
+				return {"len":-1,'error':-1,'suberror':2}
 		return t
+
 	def _req_rdsub(self,c1,c2,c3,v1=0,v2=0,v3=0,v4=0,v5=0):
 		"intern function - pack subfunction info"
 		return pack(">HHHiiiii",c1,c2,c3,v1,v2,v3,v4,v5)
@@ -157,9 +163,8 @@ class pyfanuc(object):
 		returns [HOUR,MINUTE,SECOND]
 		"""
 		st=self._req_rdsingle(1,1,0x45,1)
-		if st["len"]!=0xc or "error" in st:
-			return
-		return unpack(">HHH",st["data"][-6:])
+		if st["len"]==0xc:
+			return unpack(">HHH",st["data"][-6:])
 	def getdatetime(self):
 		"""
 		Get date and time
@@ -170,10 +175,10 @@ class pyfanuc(object):
 			return
 		if len(st["data"]) != 2:
 			return
-		if st["data"][0][0]!=0 or st["data"][1][0]!=0:
+		if st['data'][0]['error']!=0 or st["data"][1]['error']!=0:
 			return
-		if unpack(">H",st["data"][0][1][0:2])[0] == 0xc and unpack(">H",st["data"][1][1][0:2])[0] == 0xc:
-			return datetime.datetime(*unpack(">HHHHHH",st["data"][0][1][2:8]+st["data"][1][1][-6:])).timetuple()
+		if st['data'][0]['len'] == 0xc and st['data'][0]['len'] == 0xc:
+			return datetime.datetime(*unpack(">HHHHHH",st["data"][0]['data'][0:6]+st["data"][1]['data'][-6:])).timetuple()
 	def settime(self,h=None,m=0,s=0):
 		"""
 		Set Time to Parameter-Values or actual PC-Time
