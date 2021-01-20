@@ -123,7 +123,6 @@ class pyfanuc(object):
 			else:
 				return {"len":-1,'error':-1,'suberror':2}
 		return t
-
 	def _req_rdsub(self,c1,c2,c3,v1=0,v2=0,v3=0,v4=0,v5=0):
 		"intern function - pack subfunction info"
 		return pack(">HHHiiiii",c1,c2,c3,v1,v2,v3,v4,v5)
@@ -149,7 +148,7 @@ class pyfanuc(object):
 		if (self.sysinfo["cnctype"]==b"16" or self.sysinfo["cnctype"]==b"31") and st["len"]==0xe:
 			return dict(zip(['aut','run','motion','mstb','emegency','alarm','edit'],
 			unpack(">HHHHHHH",st["data"])))
-	def getdate(self):
+	def getdate(self): #v
 		"""
 		Get date
 		returns [YEAR,MONTH,DAY]
@@ -157,29 +156,31 @@ class pyfanuc(object):
 		st=self._req_rdsingle(1,1,0x45,0)
 		if st["len"]==0xc:
 			return unpack(">HHH",st["data"][0:6])
-	def gettime(self):
+	def gettime(self): #v
 		"""
 		Get time
 		returns [HOUR,MINUTE,SECOND]
 		"""
 		st=self._req_rdsingle(1,1,0x45,1)
-		if st["len"]==0xc:
-			return unpack(">HHH",st["data"][-6:])
-	def getdatetime(self):
+		if st["len"]!=0xc:
+			return
+		return unpack(">HHH",st["data"][-6:])
+	def getdatetime(self): #v
 		"""
 		Get date and time
 		returns time.struct_time
 		"""
 		st=self._req_rdmulti([self._req_rdsub(1,1,0x45,0),self._req_rdsub(1,1,0x45,1)])
-		if st["len"]<0 or "error" in st:
+		if st["len"]<0:
 			return
+		print(st)
 		if len(st["data"]) != 2:
 			return
 		if st['data'][0]['error']!=0 or st["data"][1]['error']!=0:
 			return
 		if st['data'][0]['len'] == 0xc and st['data'][0]['len'] == 0xc:
 			return datetime.datetime(*unpack(">HHHHHH",st["data"][0]['data'][0:6]+st["data"][1]['data'][-6:])).timetuple()
-	def settime(self,h=None,m=0,s=0):
+	def settime(self,h=None,m=0,s=0): #OLD
 		"""
 		Set Time to Parameter-Values or actual PC-Time
 		variant 1 - requests nothing for actual PC-Time to set
@@ -194,7 +195,7 @@ class pyfanuc(object):
 			if t["ftype"]==pyfanuc.FTYPE_VAR_RESP and unpack(">HHH",t["data"][0][0:6])==(1,1,0x46):
 				return unpack(">h",t["data"][0][6:8])[0]
 
-	def getsysinfo(self):
+	def getsysinfo(self): #v
 		"""
 		Get sysinfo
 		returns ['addinfo','maxaxis','cnctype','mttype','series','version','axes']
@@ -205,7 +206,7 @@ class pyfanuc(object):
 			unpack(">HH2s2s4s4s2s",st["data"])))
 
 	FORMAT_AXIS,FORMAT_TOOLOFF,FORMAT_MACRO,FORMAT_WORKZOFF,FORMAT_CUTFR=0,1,2,3,4;
-	def getformat(self,type=0):
+	def getformat(self,type=0): #v
 		"get typespecific numberformat"
 		st=self._req_rdsingle(1,1,0x1b,type)
 		if st["len"]>=4+2*2:
@@ -219,7 +220,7 @@ class pyfanuc(object):
 				n.update(t[0])
 			return n
 
-	def readaxesnames(self):
+	def readaxesnames(self): #v
 		st=self._req_rdsingle(1,1,0x89)
 		if st["len"]<0:
 			return
@@ -229,7 +230,7 @@ class pyfanuc(object):
 			ret.append(a[0:a.find(b'\0')].decode())
 		return ret
 
-	def readspindlenames(self):
+	def readspindlenames(self): #v
 		st=self._req_rdsingle(1,1,0x8a)
 		if st["len"]<0:
 			return
@@ -241,7 +242,7 @@ class pyfanuc(object):
 
 	ABS=1;REL=2;REF=4;SKIP=8;DIST=16;ABSWO=32;RELWO=64
 	ALLAXIS=-1
-	def readaxes(self,what=1,axis=ALLAXIS):
+	def readaxes(self,what=1,axis=ALLAXIS): #v
 		r=[]
 		axvalues=(("ABS",pyfanuc.ABS,4),("REL",pyfanuc.REL,6),("REF",pyfanuc.REF,1),("SKIP",pyfanuc.SKIP,8),("DIST",pyfanuc.DIST,7),
 			  ("ABSWO",pyfanuc.ABSWO,0),("REFWO",pyfanuc.RELWO,2))
@@ -254,11 +255,12 @@ class pyfanuc(object):
 		r={}
 		for x in st["data"]:
 			ret1=[]
-			if x[0]!=0:
+			if x['len'] < 0:
 				ret1=None
 			else:
-				for pos in range(2,unpack(">H",x[1][0:2])[0]+2,8):
-					value=x[1][pos:pos+8]
+				print(x['len'])
+				for pos in range(0,x['len'],8):
+					value=x['data'][pos:pos+8]
 					ret1.append(self._decode8(value))
 			for u,v,w in axvalues:
 				if what & v:
@@ -297,7 +299,7 @@ class pyfanuc(object):
 				elif valtype==1:
 					value=value[-1] #byte
 				elif valtype==2:
-					value=unpack(">h",value[-2:])[0] #short
+					value=unpack(">h",value[-2])[0] #short
 				elif valtype==3:
 					value=unpack(">i",value)[0] #int
 				if axiscount != -1:
@@ -307,6 +309,26 @@ class pyfanuc(object):
 					values["data"].append(value)
 			r[varname]=values
 		return r
+	def readparaminfo(self,num,count=1,param=1):
+		if param==1:
+			st=self._req_rdsingle(1,1,0x10,num,count)
+		else:
+			st=self._req_rdsingle(1,1,0x2B,num,count)
+		if st["len"]<0:
+			return
+		r={"next":unpack(">i",st["data"][4:8])[0],"before":unpack(">i",st["data"][0:4])[0]}
+		for pos in range(8,st["len"],8):
+			r[unpack(">i",st["data"][pos:pos+4])[0]]={'type':unpack(">i",st["data"][pos+4:pos+8])[0]}
+		return r
+	def readparaminfo2(self,num,count=1):
+		st=self._req_rdsingle(1,1,0xa0,num,count,0,0,0x10000)
+		if st["len"]<0:
+			return
+		r={"next":unpack(">i",st["data"][4:8])[0],"before":unpack(">i",st["data"][0:4])[0]}
+		for pos in range(8,st["len"],4*5):
+			r[unpack(">i",st["data"][pos:pos+4])[0]]=dict(zip(['size','array','unit','dim','input','display','others'],unpack(">hhhhhhh",st["data"][pos+4:pos+4+2*7])))
+		return r
+
 	def readparam2(self,axis,first,last=None,param=1):
 		"""
 		Read Parameter(s)info
@@ -338,26 +360,54 @@ class pyfanuc(object):
 					values["data"].append(value)
 			r[varname]=values
 		return r
-	def readparaminfo(self,num,count=1,param=1):
-		if param==1:
-			st=self._req_rdsingle(1,1,0x10,num,count)
-		else:
-			st=self._req_rdsingle(1,1,0x2B,num,count)
+
+	def readparameters(self,axis,first,last): #Elegant Version
+		paracmd=0x0e if conn.sysinfo['cnctype']!=b'31' else 0x8d
+		paralen=4 if conn.sysinfo['cnctype']!=b'31' else 8
+
+		st=self._req_rdmulti([self._req_rdsub(1,1,0x10,first,1),
+			self._req_rdsub(1,1,0x10,last,1),
+			self._req_rdsub(1,1,paracmd,first,last,axis)])
 		if st["len"]<0:
 			return
-		r={"next":unpack(">i",st["data"][4:8])[0],"before":unpack(">i",st["data"][0:4])[0]}
-		for pos in range(8,st["len"],8):
-			r[unpack(">i",st["data"][pos:pos+4])[0]]={'type':unpack(">i",st["data"][pos+4:pos+8])[0]}
+		f=dict(zip(['before','next','num'],unpack(">iii",st["data"][0]['data'][:12])))
+		l=dict(zip(['before','next','num'],unpack(">iii",st["data"][1]['data'][:12])))
+		if f['num'] != first:
+			first=f['num']
+		if l['num'] != last:
+			last=l['before']
+		error,length,data=st["data"][2]['error'],st["data"][2]['len'],st["data"][2]['data']
+		r={}
+		while True:
+			for pos in range(0,length,self.sysinfo["maxaxis"]*paralen+8):
+				varname,axiscount,valtype=unpack(">IhH",data[pos:pos+8])
+				values={"type":valtype,"axis":axiscount,"data":[]}
+				for n in range(pos+8,pos+self.sysinfo["maxaxis"]*paralen+8,paralen):
+					value=data[n:n+paralen]
+					if valtype==0:
+						value=[(value[3] >> n)& 1 for n in range(7,-1,-1)] #bit 1bit
+					elif valtype==4:
+						value=self._decode8(value)  #real
+					elif valtype==1 or valtype==2 or valtype==3: #byte,shert,long
+						value=unpack(">i",value[0:4])[0]
+					if axiscount != -1:
+						values["data"]=value
+						break
+					else:
+						values["data"].append(value)
+				r[varname]=values
+				first=varname+1
+			if error==2:
+				st=self._req_rdsingle(1,1,paracmd,first,last,axis)
+				error=st['error']
+				if st["len"]<0:
+					break
+				data=st['data']
+				length=st['len']
+			else:
+				break
 		return r
-	
-	def readparaminfo2(self,num,count=1):
-		st=self._req_rdsingle(1,1,0xa0,num,count,0,0,0x10000)
-		if st["len"]<0:
-			return
-		r={"next":unpack(">i",st["data"][4:8])[0],"before":unpack(">i",st["data"][0:4])[0]}
-		for pos in range(8,st["len"],4*5):
-			r[unpack(">i",st["data"][pos:pos+4])[0]]=dict(zip(['size','array','unit','dim','input','display','others'],unpack(">hhhhhhh",st["data"][pos+4:pos+4+2*7])))
-		return r
+
 	def readdiag(self,axis,first,last=None):
 		if last is None:last=first
 		st=self._req_rdsingle(1,1,0x30,first,last,axis)
@@ -471,7 +521,7 @@ class pyfanuc(object):
 			maxmsgs=int(self.sysinfo['axes'])
 		st=self._req_rdsingle(1,1,0x23,type,maxmsgs,withtext,textlength)
 		ret=[]
-		if st["len"] < 0:
+		if st["len"] < 0 :
 			return
 		for pos in range(0,st["len"],4*4+textlength):
 			entry=dict(zip(['alarmcode','alarmtype','axis'],unpack(">iii",st["data"][pos:pos+4*3])))
@@ -615,12 +665,8 @@ if __name__ == '__main__':
 	conn=pyfanuc('192.168.0.70')
 	if conn.connect():
 		print("connected")
-		print(conn.readmacro2(100))
-		for n in conn.readdir_complete("//CNC_MEM/USER/PATH1/"):
-			print(n['name']+" ("+time.strftime("%c",n['datetime'])+')' if n['type']=='F' else '<'+n['name']+'>')
-		#print(conn.readaxes(pyfanuc.ABS | pyfanuc.DIST))
-		#print(conn._req_rdsingle(1,1,0x8a))
-		print(conn.getprog("HELLO"))
+		#print(conn.getdatetime())
+		print(conn.readaxes(conn.ABS | conn.REL))
 	if conn.disconnect():
 		print("disconnected")
 
